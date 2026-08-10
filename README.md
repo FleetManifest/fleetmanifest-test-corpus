@@ -1,5 +1,13 @@
 # Superpowers
 
+> **⚠️ This is a test repository. Do not download or install from it.**
+>
+> This repo exists solely as a fixture for internal testing. It is not the
+> upstream Superpowers project, its contents may be modified, broken, or out of
+> date at any time, and nothing here is supported or intended for real use.
+> Anyone looking for Superpowers should get it from the official sources
+> described in the upstream project, not from this repository.
+
 Superpowers is a complete software development methodology for your coding agents, built on top of a set of composable skills and some initial instructions that make sure your agent uses them.
 
 
