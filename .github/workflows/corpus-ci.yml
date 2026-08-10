@@ -1,0 +1,14 @@
+name: corpus-ci
+on:
+  pull_request:
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Decide
+        run: |
+          echo "branch: ${{ github.head_ref }}"
+          case "${{ github.head_ref }}" in
+            *-fail) echo "seeded failure for the CI signal"; exit 1 ;;
+            *) echo "ok" ;;
+          esac
