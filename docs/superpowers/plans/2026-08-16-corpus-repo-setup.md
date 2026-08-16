@@ -246,9 +246,12 @@ assert_decision "unrelated command is allowed" allow \
 
 echo "guard-fixtures: jq-missing fallback is scoped, not blanket"
 # Every external the guard calls, minus jq. printf/command/cd/pwd are builtins.
+# `bash` is required too: the hook runs as a subprocess and `#!/usr/bin/env bash`
+# resolves the interpreter on this restricted PATH. Omit it and the hook dies
+# with exit 127 before any of its own logic runs.
 EMPTY_BIN="$(mktemp -d)"
 trap 'rm -rf "$EMPTY_BIN"' EXIT
-for tool in cat grep dirname basename; do
+for tool in cat grep dirname basename bash; do
   target="$(command -v "$tool")"
   ln -sf "$target" "$EMPTY_BIN/$tool"
 done
