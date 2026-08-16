@@ -14,7 +14,7 @@
 
 ---
 
-### Task 1: Rewrite the per-task quality reviewer prompt as self-contained
+## Task 1: Rewrite the per-task quality reviewer prompt as self-contained
 
 The current file delegates to `../requesting-code-review/code-reviewer.md`, which is a merge-readiness review (architecture, security, production readiness, "Ready to merge?"). Replace the entire file with a self-contained, task-scoped template.
 
@@ -171,7 +171,7 @@ git commit -m "Make per-task quality reviewer prompt self-contained and task-sco
 
 ---
 
-### Task 2: Spec reviewer prompt cleanups
+## Task 2: Spec reviewer prompt cleanups
 
 Four exact edits to `skills/subagent-driven-development/spec-reviewer-prompt.md`. Current line numbers refer to the file as of commit f55642e.
 
@@ -256,7 +256,7 @@ git commit -m "Spec reviewer: judge from the diff, grounded skepticism, ⚠️ v
 
 ---
 
-### Task 3: Implementer prompt — re-run tests after fixing review findings
+## Task 3: Implementer prompt — re-run tests after fixing review findings
 
 The reviewers' "don't re-run the implementer's tests" rule assumes the implementer re-runs tests after every fix. Make that real.
 
@@ -294,7 +294,7 @@ git commit -m "Implementer prompt: re-run covering tests after fixing review fin
 
 ---
 
-### Task 4: SKILL.md controller changes
+## Task 4: SKILL.md controller changes
 
 Six exact edits to `skills/subagent-driven-development/SKILL.md`. Current line numbers refer to commit f55642e.
 
@@ -429,7 +429,7 @@ git commit -m "SDD controller: reviewer prompt budgets, ⚠️ handling, final-r
 
 ---
 
-### Task 5: New eval scenario — per-task quality reviewer catches a planted defect
+## Task 5: New eval scenario — per-task quality reviewer catches a planted defect
 
 Lives in the `evals/` **submodule** (separate repo, `superpowers-evals`). Work on a branch there; the parent submodule-pointer bump happens at finishing time per `evals/CLAUDE.md`.
 
@@ -711,7 +711,7 @@ git commit -m "Add sdd-quality-reviewer-catches-planted-defect scenario"
 
 ---
 
-### Task 6: Static verification sweep
+## Task 6: Static verification sweep
 
 **Files:** none modified — verification only.
 
@@ -735,7 +735,7 @@ Expected: both tables still list `code-quality-reviewer` as a reviewer template 
 
 ---
 
-### Task 7: Live before/after evals (maintainer-gated)
+## Task 7: Live before/after evals (maintainer-gated)
 
 Live quorum runs launch agent CLIs in permissive modes — **trusted-maintainer operation; Jesse launches these**, per `evals/CLAUDE.md`. Requires `ANTHROPIC_API_KEY`.
 

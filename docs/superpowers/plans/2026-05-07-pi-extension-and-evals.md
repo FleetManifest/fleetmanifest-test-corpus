@@ -10,7 +10,7 @@
 
 ---
 
-### Task 1: Pi package manifest and extension tests
+## Task 1: Pi package manifest and extension tests
 
 **Files:**
 - Modify: `package.json`
@@ -57,7 +57,7 @@ Run: `node --experimental-strip-types --test tests/pi/test-pi-extension.mjs`
 
 Expected: PASS.
 
-### Task 2: Pi tool mapping reference
+## Task 2: Pi tool mapping reference
 
 **Files:**
 - Create: `skills/using-superpowers/references/pi-tools.md`
@@ -83,7 +83,7 @@ Run: `node --experimental-strip-types --test tests/pi/test-pi-extension.mjs`
 
 Expected: PASS.
 
-### Task 3: Drill Pi backend and session log normalization
+## Task 3: Drill Pi backend and session log normalization
 
 **Files:**
 - Create: `evals/backends/pi.yaml`
@@ -122,7 +122,7 @@ Run: `uv run pytest evals/tests/test_backend.py evals/tests/test_normalizer.py -
 
 Expected: PASS.
 
-### Task 4: Documentation and full verification
+## Task 4: Documentation and full verification
 
 **Files:**
 - Modify: `README.md`
