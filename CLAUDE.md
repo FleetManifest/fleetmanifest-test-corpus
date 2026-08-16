@@ -62,9 +62,14 @@ Project skills for this repo's own procedures are in `.claude/skills/`: `seeding
 `.fleetmanifest/config.yml` sets `compiler.targets: [claude-md, claude-skill]`. The compiler writes
 to exactly two places:
 
-- **This file**, as delimited blocks (`<!-- fleetmanifest:start slug=… -->`). Everything outside
-  those markers is preserved byte-for-byte, and new blocks are appended at the end. Leave the tail
-  of this file alone.
+- **This file**, as delimited blocks. Each block sits between a pair of HTML comments carrying
+  `fleetmanifest:start slug=…` and `fleetmanifest:end slug=…`. Everything outside those markers is
+  preserved byte-for-byte, and new blocks are appended at the end. Leave the tail of this file alone.
+
+  **Never write a literal marker comment into this file as an example.** The compiler's parser is a
+  regex over raw text — markdown backticks do not hide it. A start marker with no matching end is an
+  `unterminated` error, and the compiler answers that by writing *nothing at all*, not by skipping
+  the file. `tests/claude-hooks/test-claude-md-markers.sh` guards against this.
 - **`.claude/skills/<slug>/SKILL.md`**, as whole files. A hand-written skill at a colliding slug
   will be taken over — reported as `adopted`, not silently.
 
