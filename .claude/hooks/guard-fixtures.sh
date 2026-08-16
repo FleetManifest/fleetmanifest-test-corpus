@@ -19,7 +19,23 @@
 # is heuristic and evadable.
 set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
+
+# Canonicalise a path's parent directory so a textual `..`/symlink traversal
+# can't disguise a protected path as an unprotected one. Falls back to the
+# input unchanged when the parent doesn't exist yet (a new file in a new
+# directory) — there's nothing on disk to canonicalise in that case, and the
+# textual prefix check downstream still does the right thing.
+resolve_path() {
+  local input="$1"
+  local parent canonical_parent
+  parent="$(dirname -- "$input")"
+  if canonical_parent="$(cd -- "$parent" 2>/dev/null && pwd -P)"; then
+    printf '%s/%s' "$canonical_parent" "$(basename -- "$input")"
+  else
+    printf '%s' "$input"
+  fi
+}
 
 deny() {
   local reason="$1"
@@ -54,17 +70,19 @@ tool_name="$(printf '%s' "$payload" | jq -r '.tool_name // empty')"
 
 case "$tool_name" in
   Edit | Write | MultiEdit | NotebookEdit)
-    path="$(printf '%s' "$payload" | jq -r '.tool_input.file_path // empty')"
+    # NotebookEdit carries its path in a differently-named field.
+    path="$(printf '%s' "$payload" | jq -r '.tool_input.file_path // .tool_input.notebook_path // empty')"
     [[ -n "$path" ]] || exit 0
 
-    relative="${path#"$REPO_ROOT"/}"
+    resolved="$(resolve_path "$path")"
+    relative="${resolved#"$REPO_ROOT"/}"
     case "$relative" in
       corpus-fixtures/* | corpus-changes/*) ;;
       *) exit 0 ;;
     esac
 
     [[ "$(basename "$relative")" == "CLAUDE.md" ]] && exit 0
-    [[ -e "$path" ]] && deny "$DENY_FIXTURE"
+    [[ -e "$resolved" ]] && deny "$DENY_FIXTURE"
 
     case "$relative" in
       corpus-changes/*) exit 0 ;;
@@ -87,10 +105,21 @@ case "$tool_name" in
       *) exit 0 ;;
     esac
 
-    if printf '%s' "$command_line" \
-      | grep -Eq '(^|[;&|[:space:]])(rm|mv|truncate|tee)([[:space:]]|$)|sed[[:space:]][^|;&]*-i|>[[:space:]]*[^|;&>]*corpus-(fixtures|changes)/|git[[:space:]]+(checkout[[:space:]]+--|restore)'; then
-      deny "$DENY_FIXTURE"
-    fi
+    # A mutating verb only matters when it shares a segment with a protected
+    # path — "rm /tmp/x && cat corpus-fixtures/y" must not deny on "rm" alone.
+    # Split on the shell's command separators and check each segment in
+    # isolation.
+    verb_pattern='(^|[;&|[:space:]])(rm|mv|cp|ln|truncate|tee|dd)([[:space:]]|$)|sed[[:space:]][^|;&]*-i|>[[:space:]]*[^|;&>]*corpus-(fixtures|changes)/|git[[:space:]]+(checkout|restore)([[:space:]]|$)'
+    segments="$(printf '%s' "$command_line" | tr ';&|' '\n\n\n')"
+    while IFS= read -r segment || [[ -n "$segment" ]]; do
+      case "$segment" in
+        *corpus-fixtures/* | *corpus-changes/*) ;;
+        *) continue ;;
+      esac
+      if printf '%s' "$segment" | grep -Eq "$verb_pattern"; then
+        deny "$DENY_FIXTURE"
+      fi
+    done <<<"$segments"
     ;;
 esac
 

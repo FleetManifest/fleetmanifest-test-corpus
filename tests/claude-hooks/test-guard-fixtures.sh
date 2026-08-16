@@ -53,6 +53,10 @@ bash_payload() {
   jq -nc --arg c "$1" '{tool_name: "Bash", tool_input: {command: $c}}'
 }
 
+notebook_payload() {
+  jq -nc --arg p "$1" '{tool_name: "NotebookEdit", tool_input: {notebook_path: $p}}'
+}
+
 echo "guard-fixtures: existing protected files are denied"
 assert_decision "write to existing vulnerable fixture" deny \
   "$(edit_payload "$REPO_ROOT/corpus-fixtures/vulnerable-server.js")"
@@ -86,6 +90,32 @@ assert_decision "ls of a fixture dir is allowed" allow \
   "$(bash_payload "ls corpus-fixtures/")"
 assert_decision "unrelated command is allowed" allow \
   "$(bash_payload "npm test")"
+
+echo "guard-fixtures: adversarial bypasses"
+assert_decision "git checkout <ref> -- <path> restoring a stub is denied" deny \
+  "$(bash_payload "git checkout origin/corpus/pr-0001 -- corpus-changes/corpus-pr-0001.md")"
+assert_decision "NotebookEdit on a protected notebook is denied" deny \
+  "$(notebook_payload "$REPO_ROOT/corpus-fixtures/x.ipynb")"
+assert_decision "dot-dot traversal into a protected path is denied" deny \
+  "$(edit_payload "$REPO_ROOT/docs/../corpus-fixtures/vulnerable-server.js")"
+assert_decision "mutating verb in an unrelated segment is allowed" allow \
+  "$(bash_payload "rm -f /tmp/build.log && cat corpus-fixtures/vulnerable-server.js")"
+assert_decision "mutating verb in an unrelated segment (semicolon) is allowed" allow \
+  "$(bash_payload "mv /tmp/a /tmp/b; grep -r TODO corpus-changes/")"
+assert_decision "cp onto a protected path is denied" deny \
+  "$(bash_payload "cp evil.js corpus-fixtures/vulnerable-server.js")"
+
+echo "guard-fixtures: regression guards"
+assert_decision "git checkout with no protected path is allowed" allow \
+  "$(bash_payload "git checkout main")"
+assert_decision "cat of a protected path is allowed" allow \
+  "$(bash_payload "cat corpus-fixtures/vulnerable-server.js")"
+assert_decision "grep of a protected path is allowed" allow \
+  "$(bash_payload "grep -r foo corpus-changes/")"
+assert_decision "rm outside the repo fixtures is allowed" allow \
+  "$(bash_payload "rm -rf /tmp/x")"
+assert_decision "append redirect into a protected path is denied" deny \
+  "$(bash_payload "echo pwned >> corpus-fixtures/vulnerable-server.js")"
 
 echo "guard-fixtures: jq-missing fallback is scoped, not blanket"
 # Every external the guard calls, minus jq. printf/command/cd/pwd are builtins.
