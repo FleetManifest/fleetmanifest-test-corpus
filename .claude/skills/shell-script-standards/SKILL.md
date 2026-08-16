@@ -5,8 +5,11 @@ description: Use when writing or changing any shell script in this repo - the co
 
 # Shell Script Standards
 
-47 tracked shell files: 43 `*.sh` plus four extensionless shebang scripts (`hooks/session-start` and
+48 tracked shell files: 44 `*.sh` plus four extensionless shebang scripts (`hooks/session-start` and
 three under `skills/subagent-driven-development/scripts/`).
+
+Counts drift. Check with `git ls-files '*.sh' | wc -l` and `./scripts/lint-shell.sh --all | head -1`
+rather than trusting this line.
 
 ## Conventions
 

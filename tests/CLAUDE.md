@@ -17,14 +17,19 @@ One directory per harness or subject. Bash-first — `.sh` throughout, plus:
 Each directory exposes its own entry point: `run-tests.sh`, `run-all.sh`, `run-skill-tests.sh`, or
 `npm test` under `brainstorm-server/`.
 
+All thirteen directories, classified — no suite is left for you to guess about:
+
 **Cheap and safe locally:** `claude-hooks/`, `shell-lint/`, `codex/`, `codex-plugin-sync/`,
-`kimi/`, `hooks/`, `brainstorm-server/`.
+`kimi/`, `hooks/`, `brainstorm-server/`, `systematic-debugging/`, `antigravity/`, `pi/`, and
+`opencode/` (which needs `setup.sh` first).
 
 **Expensive — do not run casually:** `claude-code/` and `explicit-skill-requests/` drive the real
 `claude` CLI in headless mode. They cost tokens and take minutes. Run them deliberately, not as
 part of a general "run the tests" sweep, and say so before you do.
 
-`opencode/` needs `setup.sh` first.
+`systematic-debugging/test-find-polluter.sh` is the test for
+`skills/systematic-debugging/`'s polluter-finding script — easy to miss, because the skill and its
+test are the only pair here that live in different top-level directories.
 
 ## Writing a test
 

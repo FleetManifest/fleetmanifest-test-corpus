@@ -155,7 +155,10 @@ in the untracked `.claude/settings.json` from the committed example file.
 or `corpus-changes/`. Given a protected path:
 
 1. If its basename is `CLAUDE.md` — **allow**. Without this carve-out the two scoped files lock
-   themselves out the moment they are created and could never be corrected.
+   themselves out the moment they are created and could never be corrected. This applies to the
+   Bash branch as well as the editing tools: a carve-out honoured by only one route would make
+   `corpus-fixtures/CLAUDE.md` writable through `Write` but not through `echo >>`, and its own text
+   would then be wrong about the rule it states.
 2. Else if the file **exists** on disk — **deny**. This is the core rule: no modifying or deleting
    a vulnerable fixture or a seeded stub. Existence is tested on disk at hook time, not inferred
    from the tool name.
@@ -166,7 +169,7 @@ or `corpus-changes/`. Given a protected path:
 
 | Script | Event / matcher | Behaviour |
 |---|---|---|
-| `guard-fixtures.sh` | `PreToolUse`, matcher `Edit\|Write\|MultiEdit` | Extracts `tool_input.file_path` from the stdin JSON. Applies the protection rule. Denies via JSON on stdout: `hookSpecificOutput.permissionDecision: "deny"` with a `permissionDecisionReason` explaining that the file is a deliberate fixture. Otherwise emits nothing and exits 0. |
+| `guard-fixtures.sh` | `PreToolUse`, matcher `Edit\|Write\|MultiEdit\|NotebookEdit` | Extracts `tool_input.file_path`, falling back to `tool_input.notebook_path` — `NotebookEdit` uses the second name, and reading only the first made the matcher inert for that tool. Applies the protection rule. Denies via JSON on stdout: `hookSpecificOutput.permissionDecision: "deny"` with a `permissionDecisionReason` explaining that the file is a deliberate fixture. Otherwise emits nothing and exits 0. |
 | `guard-fixtures.sh` | `PreToolUse`, matcher `Bash` | Extracts `tool_input.command`. Denies when the command references `corpus-fixtures/` or `corpus-changes/` **and** matches a mutating pattern (`rm`, `mv`, `sed -i`, `truncate`, `tee`, `>` redirect, `git checkout --`, `git restore`), or when it matches a wholesale-discard pattern that needs no path at all (`git reset --hard`, `git clean`, `git stash`). Same deny mechanism. |
 | `lint-shell-on-edit.sh` | `PostToolUse`, matcher `Edit\|Write\|MultiEdit` | If `tool_input.file_path` is a shell file, run `lint-shell.sh <path>`. On failure, **exit 2** with ShellCheck's output on stderr — for `PostToolUse`, exit 2 is the only code that routes stderr back to the model; other non-zero codes surface to the user instead. |
 

@@ -117,6 +117,48 @@ assert_decision "rm outside the repo fixtures is allowed" allow \
 assert_decision "append redirect into a protected path is denied" deny \
   "$(bash_payload "echo pwned >> corpus-fixtures/vulnerable-server.js")"
 
+echo "guard-fixtures: pipelines are one command, not separate segments"
+assert_decision "xargs rm through a pipe is denied" deny \
+  "$(bash_payload "echo corpus-fixtures/vulnerable-server.js | xargs rm -f")"
+assert_decision "find -delete is denied" deny \
+  "$(bash_payload "find corpus-fixtures/ -name '*.js' -delete")"
+assert_decision "find without -delete is allowed" allow \
+  "$(bash_payload "find corpus-fixtures/ -name '*.js'")"
+assert_decision "cat piped to grep is allowed" allow \
+  "$(bash_payload "cat corpus-fixtures/vulnerable-server.js | grep -n eval")"
+
+echo "guard-fixtures: additional mutating verbs"
+assert_decision "perl -i is denied" deny \
+  "$(bash_payload "perl -i -pe 's/a/b/' corpus-changes/corpus-pr-0001.md")"
+assert_decision "rsync onto a fixture is denied" deny \
+  "$(bash_payload "rsync -a /tmp/evil.js corpus-fixtures/vulnerable-server.js")"
+assert_decision "shred is denied" deny \
+  "$(bash_payload "shred -u corpus-fixtures/vulnerable-server.js")"
+assert_decision "install is denied" deny \
+  "$(bash_payload "install -m 644 /tmp/evil.js corpus-fixtures/vulnerable-server.js")"
+assert_decision "subshell without a space is denied" deny \
+  "$(bash_payload "(rm corpus-fixtures/vulnerable-server.js)")"
+assert_decision "command substitution is denied" deny \
+  "$(bash_payload "echo \$(rm corpus-fixtures/vulnerable-server.js)")"
+assert_decision "git rm is denied" deny \
+  "$(bash_payload "git rm corpus-changes/corpus-pr-0001.md")"
+
+echo "guard-fixtures: path boundaries and comments do not false-positive"
+assert_decision "unrelated dir sharing a name substring is allowed" allow \
+  "$(bash_payload "rm not-corpus-fixtures/old-backup.js")"
+assert_decision "protected path only in a trailing comment is allowed" allow \
+  "$(bash_payload "rm /tmp/scratch.js  # nothing to do with corpus-fixtures/")"
+assert_decision "leading ./ still matches" deny \
+  "$(bash_payload "rm ./corpus-fixtures/vulnerable-server.js")"
+
+echo "guard-fixtures: Bash honours the CLAUDE.md carve-out too"
+assert_decision "appending to corpus-fixtures/CLAUDE.md is allowed" allow \
+  "$(bash_payload "echo x >> corpus-fixtures/CLAUDE.md")"
+assert_decision "appending to corpus-changes/CLAUDE.md is allowed" allow \
+  "$(bash_payload "echo x >> corpus-changes/CLAUDE.md")"
+assert_decision "CLAUDE.md carve-out does not shield a sibling fixture" deny \
+  "$(bash_payload "cp corpus-fixtures/CLAUDE.md corpus-fixtures/vulnerable-server.js")"
+
 echo "guard-fixtures: jq-missing fallback is scoped, not blanket"
 # Every external the guard calls, minus jq. printf/command/cd/pwd are builtins.
 # bash itself must resolve too: the hook is a fresh subprocess, and its

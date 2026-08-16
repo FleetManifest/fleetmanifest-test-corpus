@@ -16,7 +16,11 @@
 # not a decision.
 #
 # This is a speed bump, not a security boundary. The Bash matcher in particular
-# is heuristic and evadable.
+# is heuristic. Known and accepted limits: it reads command text, so it cannot
+# follow a path built from a variable, reached after a `cd`, or hidden behind a
+# symlink; and it will deny a harmless quoted string that happens to contain
+# both a mutating verb and a protected path (`echo 'do not rm corpus-fixtures/x'`),
+# because nothing in the text distinguishes that from the real thing.
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
@@ -35,6 +39,27 @@ resolve_path() {
   else
     printf '%s' "$input"
   fi
+}
+
+# Drop a trailing comment before matching. A protected path named only in a
+# comment is documentation, not an operation on the fixture.
+strip_comment() {
+  printf '%s' "$1" | sed -e 's/[[:space:]]#.*$//' -e 's/^#.*$//'
+}
+
+# True when the text operates on a protected path.
+#
+# Two refinements over a plain substring test. The reference must sit on a path
+# boundary, so `not-corpus-fixtures/` and `mycorpus-changes/` are ordinary
+# directories rather than fixtures. And the two scoped CLAUDE.md files are
+# exempt, matching the carve-out the Edit/Write branch already makes — without
+# this, `corpus-fixtures/CLAUDE.md` could be written through one tool and not
+# the other, and its own text would be wrong about the rule.
+mentions_protected() {
+  local text="$1"
+  text="${text//corpus-fixtures\/CLAUDE.md/}"
+  text="${text//corpus-changes\/CLAUDE.md/}"
+  printf '%s' "$text" | grep -Eq '(^|[^[:alnum:]_.-])(\./)?corpus-(fixtures|changes)/'
 }
 
 deny() {
@@ -100,22 +125,32 @@ case "$tool_name" in
       deny "$DENY_FIXTURE This command discards working-tree state wholesale, which includes the fixture directories."
     fi
 
-    case "$command_line" in
-      *corpus-fixtures/* | *corpus-changes/*) ;;
-      *) exit 0 ;;
-    esac
+    mentions_protected "$command_line" || exit 0
 
-    # A mutating verb only matters when it shares a segment with a protected
+    # A mutating verb only matters when it shares a command with a protected
     # path — "rm /tmp/x && cat corpus-fixtures/y" must not deny on "rm" alone.
-    # Split on the shell's command separators and check each segment in
-    # isolation.
-    verb_pattern='(^|[;&|[:space:]])(rm|mv|cp|ln|truncate|tee|dd)([[:space:]]|$)|sed[[:space:]][^|;&]*-i|>[[:space:]]*[^|;&>]*corpus-(fixtures|changes)/|git[[:space:]]+(checkout|restore)([[:space:]]|$)'
-    segments="$(printf '%s' "$command_line" | tr ';&|' '\n\n\n')"
+    #
+    # A pipeline is deliberately NOT split: data flows along it, so
+    # "echo corpus-fixtures/x | xargs rm -f" is one operation on the fixture and
+    # splitting it would hide the verb from the path. Only `;`, `&&`, `||`, `&`
+    # and newlines start a genuinely separate command.
+    #
+    # Verb boundaries admit backtick, `(` and `{` so a subshell or command
+    # substitution cannot smuggle the verb past the check.
+    verb_pattern='(^|[;&|`({[:space:]])(rm|mv|cp|ln|truncate|tee|dd|shred|rsync|install|sponge)([[:space:]]|$)'
+    verb_pattern+='|(sed|perl)[[:space:]][^;&]*-i'
+    verb_pattern+='|find[[:space:]][^;&]*-(delete|exec)'
+    verb_pattern+='|>'
+    verb_pattern+='|git[[:space:]]+(checkout|restore|mv|rm)([[:space:]]|$)'
+
+    segments="${command_line//&&/$'\n'}"
+    segments="${segments//||/$'\n'}"
+    segments="${segments//;/$'\n'}"
+    segments="${segments//&/$'\n'}"
+
     while IFS= read -r segment || [[ -n "$segment" ]]; do
-      case "$segment" in
-        *corpus-fixtures/* | *corpus-changes/*) ;;
-        *) continue ;;
-      esac
+      segment="$(strip_comment "$segment")"
+      mentions_protected "$segment" || continue
       if printf '%s' "$segment" | grep -Eq "$verb_pattern"; then
         deny "$DENY_FIXTURE"
       fi

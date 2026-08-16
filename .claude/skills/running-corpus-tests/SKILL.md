@@ -22,6 +22,7 @@ repo, cloned into a gitignored `evals/` that is **absent from this checkout** â€
 | Kimi manifest | `./tests/kimi/run-tests.sh` |
 | Antigravity | `./tests/antigravity/run-tests.sh` |
 | Pi extension | `node tests/pi/test-pi-extension.mjs` |
+| `skills/systematic-debugging/` | `./tests/systematic-debugging/test-find-polluter.sh` |
 
 ## The expensive ones
 

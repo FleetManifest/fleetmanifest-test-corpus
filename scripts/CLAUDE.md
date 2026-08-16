@@ -17,7 +17,7 @@ Maintenance and release tooling. These standards apply to **every** shell script
 
 ```bash
 ./scripts/lint-shell.sh                 # changed files (default)
-./scripts/lint-shell.sh --all           # every tracked shell file (47 of them)
+./scripts/lint-shell.sh --all           # every tracked shell file (48 of them)
 ./scripts/lint-shell.sh --format        # shfmt -w first, then lint
 ./scripts/lint-shell.sh --strict        # extra optional ShellCheck rules
 ./scripts/lint-shell.sh path/to/one.sh  # a specific file
