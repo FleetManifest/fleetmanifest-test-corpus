@@ -1,0 +1,18 @@
+version: 1
+repo:
+  id: 351a95af72a0f9fe3ef32bb2e580dbd5
+  bufferPath: /Users/glynrob/.local/state/fleetmanifest/351a95af72a0f9fe3ef32bb2e580dbd5.ndjson
+  remoteRepoId: rep_01M030EGDCZZJW673E7FHF26TX
+sync:
+  ruleText: false
+capture:
+  stalenessWindowMinutes: 5
+api:
+  baseUrl: https://test.fleetmanifest.ai
+analyser:
+  command: claude
+  model: claude-sonnet-5
+compiler:
+  targets:
+    - claude-md
+    - claude-skill
