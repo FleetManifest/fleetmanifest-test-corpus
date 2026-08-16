@@ -1,6 +1,9 @@
 .worktrees/
 .private-journal/
-.claude/
+.claude/*
+!.claude/skills/
+!.claude/hooks/
+!.claude/settings.example.json
 .superpowers/
 .DS_Store
 node_modules/
