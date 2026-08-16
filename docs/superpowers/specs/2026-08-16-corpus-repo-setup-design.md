@@ -221,7 +221,10 @@ The design is satisfied when all of the following hold:
    `git check-ignore -v .claude/hooks/guard-fixtures.sh` reports **no** match;
    `git check-ignore -v .claude/settings.example.json` reports **no** match; and
    `git check-ignore -v .claude/settings.json` still reports a match.
-2. `scripts/lint-shell.sh --all` passes with the two new hook scripts tracked.
+2. `scripts/lint-shell.sh` passes on every file this work adds (the two hook scripts and the three
+   test scripts). **Not** `--all`: the repo's baseline is already dirty — eleven warnings in
+   `tests/claude-code/` (SC2155, SC2064, SC2320, SC2088) predate this work, and fixing upstream lint
+   debt is out of scope.
 3. Both hook scripts are tracked mode `100755` (`git ls-files -s .claude/hooks/`).
 4. Guard denies: a `Write` to the existing `corpus-fixtures/vulnerable-server.js`; a `Write` to an
    existing `corpus-changes/corpus-pr-0001.md`; creation of a new `corpus-fixtures/SECURITY.md`;

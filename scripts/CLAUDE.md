@@ -17,13 +17,17 @@ Maintenance and release tooling. These standards apply to **every** shell script
 
 ```bash
 ./scripts/lint-shell.sh                 # changed files (default)
-./scripts/lint-shell.sh --all           # every tracked shell file (42 of them)
+./scripts/lint-shell.sh --all           # every tracked shell file (47 of them)
 ./scripts/lint-shell.sh --format        # shfmt -w first, then lint
 ./scripts/lint-shell.sh --strict        # extra optional ShellCheck rules
 ./scripts/lint-shell.sh path/to/one.sh  # a specific file
 ```
 
 Requires `shellcheck` on PATH, and `shfmt` for `--format`. The script `die`s if they are missing.
+
+**`--all` currently fails on pre-existing debt.** Eleven warnings live in `tests/claude-code/`
+(SC2155, SC2064, SC2320, SC2088) and predate this guidance. Lint the files you touched rather than
+the whole tree, and do not treat a red `--all` as something your change broke.
 
 ## The scripts
 

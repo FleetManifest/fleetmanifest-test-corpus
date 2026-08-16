@@ -1151,7 +1151,7 @@ description: Use when writing or changing any shell script in this repo - the co
 
 # Shell Script Standards
 
-42 tracked shell files: 38 `*.sh` plus four extensionless shebang scripts (`hooks/session-start` and
+47 tracked shell files: 43 `*.sh` plus four extensionless shebang scripts (`hooks/session-start` and
 three under `skills/subagent-driven-development/scripts/`).
 
 ## Conventions
@@ -1177,13 +1177,16 @@ gracefully if it is missing rather than failing in a way that blocks work.
 
 ```bash
 ./scripts/lint-shell.sh                 # changed files (default)
-./scripts/lint-shell.sh --all           # all 42
+./scripts/lint-shell.sh --all           # all 47
 ./scripts/lint-shell.sh --format        # shfmt -w, then lint
 ./scripts/lint-shell.sh --strict        # extra optional rules
 ./scripts/lint-shell.sh path/to/one.sh
 ```
 
 Needs `shellcheck` on PATH (and `shfmt` for `--format`); the script exits 1 if either is missing.
+
+**`--all` currently fails on pre-existing debt** — eleven warnings in `tests/claude-code/` that
+predate this guidance. Lint what you touched; a red `--all` is not necessarily your fault.
 
 If the `lint-shell-on-edit` hook is registered, ShellCheck runs automatically on every shell file you
 edit and feeds failures straight back to you.
@@ -1255,11 +1258,16 @@ commands; `3` enforcement commands.
 ./tests/claude-hooks/test-gitignore-scope.sh
 ./tests/claude-hooks/test-guard-fixtures.sh
 ./tests/claude-hooks/test-lint-shell-on-edit.sh
-./scripts/lint-shell.sh --all
+./scripts/lint-shell.sh .claude/hooks/*.sh tests/claude-hooks/*.sh
 ./tests/shell-lint/test-lint-shell.sh
 ```
-Expected: `All passed` from each of the three hook suites, no ShellCheck output from `--all`, and a
-pass from the shell-lint suite.
+Expected: `All passed` from each of the three hook suites, no ShellCheck output from the lint run,
+and a pass from the shell-lint suite.
+
+**Do not run `--all` as a gate.** The repo baseline already fails it: eleven warnings in
+`tests/claude-code/` (SC2155, SC2064, SC2320, SC2088) predate this work and are untouched by this
+branch (`git diff --name-only main..HEAD -- tests/claude-code/` is empty). Fixing upstream lint debt
+is out of scope.
 
 - [ ] **Step 3: Verify the executable bits**
 
