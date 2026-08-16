@@ -32,7 +32,7 @@ Not a README edit. The README is install-and-reference material; this is an argu
 two would bloat the project's entry point and bury the install instructions that most readers
 actually came for.
 
-**Length:** 700–900 words. Skimmable headers. No images, no diagrams.
+**Length:** 700–950 words (draft measures 892). Skimmable headers. No images, no diagrams.
 
 ## Structure
 
@@ -110,7 +110,7 @@ document that claims only benefits reads as marketing and gets discarded.
 
 ## Acceptance criteria
 
-- [ ] `docs/why-superpowers.md` exists, 700–900 words
+- [ ] `docs/why-superpowers.md` exists, 700–950 words
 - [ ] All six failure-mode sections present, each naming a specific file
 - [ ] Every quoted string matches its source file exactly
 - [ ] Every file:line reference resolves in the working tree

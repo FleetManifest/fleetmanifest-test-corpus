@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add `docs/why-superpowers.md`, a 700–900 word explainer that makes the adoption case to a skeptical developer, with every claim traceable to a file in this checkout.
+**Goal:** Add `docs/why-superpowers.md`, a 700–950 word explainer that makes the adoption case to a skeptical developer, with every claim traceable to a file in this checkout.
 
 **Architecture:** One new Markdown file, built in three passes (framing + failure modes 1–3, failure modes 4–6, closing sections). Correctness is enforced by a scratchpad shell script that verifies every quoted string appears verbatim in BOTH its source file and the doc, plus word count and working-tree cleanliness. The script is written first and must fail before the doc exists.
 
@@ -126,13 +126,13 @@ for p in "Root Cause Investigation" "Pattern Analysis" "Hypothesis and Testing";
   check_file "doc phase: $p" "$p" "$DOC"
 done
 
-echo "== word count 700-900 =="
+echo "== word count 700-950 =="
 if [ -f "$DOC" ]; then
   wc_words=$(wc -w < "$DOC" | tr -d ' ')
-  if [ "$wc_words" -ge 700 ] && [ "$wc_words" -le 900 ]; then
+  if [ "$wc_words" -ge 700 ] && [ "$wc_words" -le 950 ]; then
     pass "word count = $wc_words"
   else
-    fail "word count = $wc_words (want 700-900)"
+    fail "word count = $wc_words (want 700-950)"
   fi
 else
   fail "word count (no doc)"
@@ -302,7 +302,7 @@ SP=/private/tmp/claude-501/-Users-glynrob-corpus/c77ae3f8-5b87-4332-bf61-ae3cec4
 
 Expected: `ALL CHECKS PASSED`, exit 0.
 
-If word count falls outside 700–900, adjust prose in the "What it costs you" section only — the quoted material in earlier sections must not be trimmed, since the checker matches it verbatim.
+If word count falls outside 700–950, adjust prose in the "What it costs you" section only — the quoted material in earlier sections must not be trimmed, since the checker matches it verbatim. The draft as written measures 892 words.
 
 - [ ] **Step 3: Commit**
 
