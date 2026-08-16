@@ -245,3 +245,10 @@ The design is satisfied when all of the following hold:
 10. Each skill's content is checked against the repo: the branch/stub naming in
     `seeding-a-corpus-pr` matches the existing 200 pairs, and the suite list in
     `running-corpus-tests` matches the directories actually under `tests/`.
+11. Root `CLAUDE.md` contains no unbalanced compiler marker. **Added during implementation after a
+    real failure:** the first draft illustrated a managed block with a literal marker comment. The
+    compiler matches markers with a plain regex over raw text (`markers.ts:54`), so markdown
+    backticks hide nothing — it parsed as a genuine start marker with no matching end, which is an
+    `unterminated` error, and the compiler answers that by writing nothing at all for every target
+    rather than skipping the file. `fmanifest apply` would have produced an empty PR. Guarded by
+    `tests/claude-hooks/test-claude-md-markers.sh`.
