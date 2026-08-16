@@ -1,0 +1,18 @@
+{
+  "lockfileVersion": 1,
+  "rules": [
+    {
+      "defectClassId": null,
+      "provenance": "proposed",
+      "slug": "diagnose-before-retrying-bash-failures",
+      "sourceChecksum": "dfddbb6937658bc752c29dc3db104b24c4db72dc41ca70ddbcd44b65301417e2",
+      "targets": [
+        {
+          "checksum": "0bc0751e5ebac30e79cd857e8bc3e1e007251d2422ab00b47cf4e3de32c51bc6",
+          "path": "CLAUDE.md"
+        }
+      ],
+      "tier": "prose"
+    }
+  ]
+}
