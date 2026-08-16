@@ -62,7 +62,7 @@ effect.
 After the six failure modes: **why this is a platform and not a prompt.**
 
 None of the above helps if the developer has to remember to invoke it. The `SessionStart` hook in
-`hooks.json` matches `startup|clear|compact` and injects the `using-superpowers` bootstrap
+`hooks/hooks.json` matches `startup|clear|compact` and injects the `using-superpowers` bootstrap
 automatically — including after compaction, which is precisely the moment a long-running agent
 otherwise drifts off-process. The discipline is re-asserted at the point of maximum risk rather
 than relying on the operator to notice.
@@ -79,8 +79,14 @@ Stated plainly, not as a disclaimer:
 - More tokens per task — subagent review multiplies calls
 - Process weight on trivial fixes
 
-Plus the escape hatch: the bootstrap's own Instruction Priority section ranks user instructions
-(`CLAUDE.md`, `AGENTS.md`, direct requests) above skills. A project that says "don't use TDD" wins.
+Plus the escape hatch: the bootstrap's own "User Instructions" section
+(`skills/using-superpowers/SKILL.md`, final section) ranks user instructions (`CLAUDE.md`,
+`AGENTS.md`, `GEMINI.md`, direct requests) above skills, which in turn override default behavior. A
+project that says "don't use TDD" wins.
+
+Note: the installed plugin build (superpowers-dev 5.0.2) carries a newer bootstrap with an
+"Instruction Priority" numbered list saying the same thing. The doc cites this checkout's wording,
+not the installed build's.
 
 For a skeptical reader this section is not a hedge, it is the part that makes the rest credible. A
 document that claims only benefits reads as marketing and gets discarded.
@@ -109,6 +115,6 @@ document that claims only benefits reads as marketing and gets discarded.
 - [ ] Every quoted string matches its source file exactly
 - [ ] Every file:line reference resolves in the working tree
 - [ ] "Why a platform, not a prompt" section present and cites the `startup|clear|compact` matcher
-- [ ] "What it costs you" section present with at least four honest costs and the instruction-priority escape hatch
+- [ ] "What it costs you" section present with at least four honest costs and the "User Instructions" escape hatch
 - [ ] No claim in the document lacks a corresponding file in this checkout
 - [ ] No files other than `docs/why-superpowers.md` modified
