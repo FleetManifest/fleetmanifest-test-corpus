@@ -460,12 +460,15 @@ set -euo pipefail
 echo "hello"
 EOF
 
-# SC2086: unquoted variable expansion — a warning-severity finding.
+# SC2034 (unused variable) is warning-severity, so `--severity=warning` catches it.
+# Do NOT use SC2086 (unquoted expansion) here: it is *info* severity in
+# ShellCheck 0.11, so lint-shell.sh would exit 0 and this assertion would test
+# nothing.
 cat >"$WORK_DIR/dirty.sh" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
-target=$1
-ls $target
+unused_var="hello"
+echo "world"
 EOF
 
 printf 'not shell\n' >"$WORK_DIR/notes.md"
