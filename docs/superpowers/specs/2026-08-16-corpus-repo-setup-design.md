@@ -79,8 +79,11 @@ Replace the upstream contributor guide with a short, fork-accurate file. Section
 - **Fixture invariants** — the seeded branches, the `-fail` CI convention, the vulnerable fixtures.
   Stated as things that must not be repaired.
 - **Local setup** — how to register the enforcement hooks in the untracked
-  `.claude/settings.json`, so the setup is reproducible by hand.
-- **Where the scoped rules live** — a pointer table to the six subfolder files.
+  `.claude/settings.json` by copying from the committed `.claude/settings.example.json`, and the
+  local prerequisites those hooks need (`jq`, `shellcheck`, `shfmt`).
+- **Where the scoped rules live** — a pointer table to the six subfolder files, plus a line
+  stating that `.claude/hooks/` follows `scripts/CLAUDE.md`'s shell standards, since no scoped
+  file covers it.
 - **Known dead configuration** — the no-op `.pre-commit-config.yaml` and the `AGENTS.md` symlink
   hazard, so nobody rediscovers them as bugs.
 
@@ -97,7 +100,7 @@ then record.
 | `corpus-changes/CLAUDE.md` | 200 seeded stubs paired with `corpus/pr-NNNN` branches. Do not edit, renumber, or regenerate. The `Derived from <sha>` line is provenance, not a task. |
 | `corpus-fixtures/CLAUDE.md` | The vulnerabilities are the point. Do not fix, do not add mitigations, do not add a security note that would change scanner output. |
 | `skills/CLAUDE.md` | Frontmatter is exactly `name` + `description`. "Your human partner" is deliberate. No reformatting to Anthropic's published skill guidance. Behavioural changes need eval evidence. Changes sync to `.codex-plugin` via `scripts/sync-to-codex-plugin.sh`. |
-| `tests/CLAUDE.md` | Layout is one directory per harness (`antigravity`, `claude-code`, `codex`, `codex-plugin-sync`, `explicit-skill-requests`, `hooks`, `kimi`, `opencode`, `pi`, `shell-lint`, `systematic-debugging`, `brainstorm-server`). Bash-first: `.sh` throughout, plus three `.test.sh` and eight `.test.js` under `brainstorm-server`, one `.mjs` each under `opencode/` and `pi/`, and one `.py` analysis script under `claude-code/`. Which suites are safe to run locally. |
+| `tests/CLAUDE.md` | Layout is one directory per harness (`antigravity`, `claude-code`, `codex`, `codex-plugin-sync`, `explicit-skill-requests`, `hooks`, `kimi`, `opencode`, `pi`, `shell-lint`, `systematic-debugging`, `brainstorm-server`). Bash-first: `.sh` throughout, plus three `.test.sh` and seven `.test.js` under `brainstorm-server` (the only `.js` anywhere under `tests/`), one `.mjs` each under `opencode/` and `pi/`, and one `.py` analysis script under `claude-code/`. Which suites are safe to run locally. |
 | `hooks/CLAUDE.md` | Plugin hooks, registered through `hooks/hooks.json` (and `hooks/hooks-cursor.json` for Cursor) with `${CLAUDE_PLUGIN_ROOT}` paths, dispatched via `run-hook.cmd` for Windows polyglot compatibility. Zero external dependencies — this is shipped plugin code, unlike `.claude/hooks/`. |
 | `scripts/CLAUDE.md` | Shell standards: `set -euo pipefail`, ShellCheck clean at `--severity=warning`, `shfmt -i 2 -ci -bn`, POSIX-safe where the shebang says `sh`. |
 
@@ -148,18 +151,24 @@ This also fixes defect 3 — `fmanifest apply`'s skill output becomes visible to
 Scripts tracked under `.claude/hooks/`, committed with the executable bit set, registered by hand
 in the untracked `.claude/settings.json` from the committed example file.
 
-**The protection rule, stated once:** modification or deletion of an **existing** file under
-`corpus-fixtures/` or `corpus-changes/` is denied; **creation of a new file** in those directories
-is allowed. This is what makes the guard compatible with `seeding-a-corpus-pr` (which creates a new
-stub) and with writing the two scoped `CLAUDE.md` files, while still stopping an agent from
-"fixing" a vulnerable fixture or renumbering the seeded set. Existence is tested on disk at hook
-time, not inferred from the tool name.
+**The protection rule, stated once.** A path is *protected* when it sits under `corpus-fixtures/`
+or `corpus-changes/`. Given a protected path:
+
+1. If its basename is `CLAUDE.md` — **allow**. Without this carve-out the two scoped files lock
+   themselves out the moment they are created and could never be corrected.
+2. Else if the file **exists** on disk — **deny**. This is the core rule: no modifying or deleting
+   a vulnerable fixture or a seeded stub. Existence is tested on disk at hook time, not inferred
+   from the tool name.
+3. Else (a new file) — **allow only under `corpus-changes/`**. Creation there is what
+   `seeding-a-corpus-pr` needs. Creation under `corpus-fixtures/` is denied: a new
+   `vulnerable-server.fixed.js` or `SECURITY.md` beside the fixtures could change what a scanner
+   reports on that directory, which is the outcome the guard exists to prevent.
 
 | Script | Event / matcher | Behaviour |
 |---|---|---|
 | `guard-fixtures.sh` | `PreToolUse`, matcher `Edit\|Write\|MultiEdit` | Extracts `tool_input.file_path` from the stdin JSON. Applies the protection rule. Denies via JSON on stdout: `hookSpecificOutput.permissionDecision: "deny"` with a `permissionDecisionReason` explaining that the file is a deliberate fixture. Otherwise emits nothing and exits 0. |
-| `guard-fixtures.sh` | `PreToolUse`, matcher `Bash` | Extracts `tool_input.command`. Denies when the command references `corpus-fixtures/` or `corpus-changes/` **and** matches a mutating pattern (`rm`, `mv`, `sed -i`, `truncate`, `tee`, `>` redirect, `git checkout --`, `git restore`). Same deny mechanism. |
-| `lint-shell-on-edit.sh` | `PostToolUse`, matcher `Edit\|Write\|MultiEdit` | If `tool_input.file_path` is a shell file, run `scripts/lint-shell.sh <path>`. On failure, **exit 2** with ShellCheck's output on stderr — for `PostToolUse`, exit 2 is the only code that routes stderr back to the model; other non-zero codes surface to the user instead. |
+| `guard-fixtures.sh` | `PreToolUse`, matcher `Bash` | Extracts `tool_input.command`. Denies when the command references `corpus-fixtures/` or `corpus-changes/` **and** matches a mutating pattern (`rm`, `mv`, `sed -i`, `truncate`, `tee`, `>` redirect, `git checkout --`, `git restore`), or when it matches a wholesale-discard pattern that needs no path at all (`git reset --hard`, `git clean`, `git stash`). Same deny mechanism. |
+| `lint-shell-on-edit.sh` | `PostToolUse`, matcher `Edit\|Write\|MultiEdit` | If `tool_input.file_path` is a shell file, run `lint-shell.sh <path>`. On failure, **exit 2** with ShellCheck's output on stderr — for `PostToolUse`, exit 2 is the only code that routes stderr back to the model; other non-zero codes surface to the user instead. |
 
 **The Bash guard is heuristic and acknowledged as such.** It will occasionally deny a harmless
 command that merely names a protected path, and a determined agent can evade it (variable
@@ -171,12 +180,20 @@ zero-dependency rule does not apply to them. Both use `jq` to parse the hook's s
 JSON parsing is fragile against escaped paths, and getting the path wrong in a guard is worse than
 requiring a tool. The two hooks diverge on what happens when `jq` is missing:
 
-- `guard-fixtures.sh` **fails closed** — denies with a reason naming the missing dependency. A guard
-  that silently stops guarding is worse than one that is loudly broken.
+- `guard-fixtures.sh` **fails closed, but only within its own blast radius.** Without `jq` it cannot
+  extract a path, so it falls back to a plain `grep` of the raw stdin payload for `corpus-fixtures/`
+  or `corpus-changes/` and denies only on a hit, naming the missing dependency in the reason.
+  A blanket deny would reject every `Edit`, `Write` and `Bash` call in the repo and brick it — the
+  fallback must be scoped to the paths the guard is responsible for. Everything else is allowed
+  through unchanged.
 - `lint-shell-on-edit.sh` **fails open** — exits 0 silently. It also checks for `shellcheck` on PATH
   itself before invoking `scripts/lint-shell.sh`, because that script calls `require_tool shellcheck`
   and `die`s with exit 1, which would surface as noise to the user on every shell edit rather than
   as advisory feedback.
+
+Neither script may assume its working directory. Both resolve the repo root from their own location
+(`$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)`) and use absolute paths from there — hooks run
+with an uncontrolled cwd, so a relative `scripts/lint-shell.sh` would silently do nothing.
 
 `jq`, `shellcheck`, and `shfmt` are recorded as local prerequisites in root `CLAUDE.md`.
 
@@ -194,8 +211,9 @@ Both scripts follow `scripts/CLAUDE.md`'s standards (`set -euo pipefail`, ShellC
 
 ## Verification
 
-Prerequisites: `jq`, `shellcheck`, and `shfmt` on PATH. None is currently installed on the
-development machine, so installing them is step zero — criterion 2 cannot run without ShellCheck.
+Prerequisites: `jq`, `shellcheck`, and `shfmt` on PATH. `jq` is already installed at `/usr/bin/jq`;
+`shellcheck` and `shfmt` are not, so installing those two is step zero — criterion 2 cannot run
+without ShellCheck.
 
 The design is satisfied when all of the following hold:
 
@@ -206,12 +224,17 @@ The design is satisfied when all of the following hold:
 2. `scripts/lint-shell.sh --all` passes with the two new hook scripts tracked.
 3. Both hook scripts are tracked mode `100755` (`git ls-files -s .claude/hooks/`).
 4. Guard denies: a `Write` to the existing `corpus-fixtures/vulnerable-server.js`; a `Write` to an
-   existing `corpus-changes/corpus-pr-0001.md`; a Bash `rm corpus-fixtures/vulnerable_handler.py`.
-5. Guard allows: creation of a new `corpus-changes/corpus-pr-0200.md`; a `Write` to a scratch path;
-   a Bash `ls corpus-fixtures/`.
+   existing `corpus-changes/corpus-pr-0001.md`; creation of a new `corpus-fixtures/SECURITY.md`;
+   a Bash `rm corpus-fixtures/vulnerable_handler.py`; a Bash `git reset --hard`.
+5. Guard allows: creation of a new `corpus-changes/corpus-pr-0200.md`; a `Write` to
+   `corpus-fixtures/CLAUDE.md` **after** it already exists; a `Write` to a scratch path; a Bash
+   `ls corpus-fixtures/`.
 6. Editing a `.sh` file carrying a deliberate ShellCheck warning surfaces that warning to the agent
    (hook exits 2 with the diagnostic on stderr).
-7. With `jq` removed from PATH, the guard denies rather than allowing; the lint hook exits 0.
+7. With `jq` removed from PATH: the guard still denies a `Write` to
+   `corpus-fixtures/vulnerable-server.js`, **and still allows** a `Write` to a scratch path — both
+   halves must hold, or the fallback has bricked the repo rather than scoped itself. The lint hook
+   exits 0.
 8. Root `CLAUDE.md` contains no upstream-only instruction (no `dev` branch, no PR template, no
    rejection-rate framing) and ends without trailing marker content.
 9. Each of the six scoped `CLAUDE.md` files and four `SKILL.md` files exists at the specified path,
