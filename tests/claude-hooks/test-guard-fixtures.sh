@@ -150,6 +150,10 @@ assert_decision "protected path only in a trailing comment is allowed" allow \
   "$(bash_payload "rm /tmp/scratch.js  # nothing to do with corpus-fixtures/")"
 assert_decision "leading ./ still matches" deny \
   "$(bash_payload "rm ./corpus-fixtures/vulnerable-server.js")"
+assert_decision "stderr redirect beside a fixture mention is allowed" allow \
+  "$(bash_payload "ls corpus-fixtures/*.js 2>/dev/null")"
+assert_decision "redirect into a fixture is still denied" deny \
+  "$(bash_payload "echo pwned > corpus-fixtures/vulnerable-server.js")"
 
 echo "guard-fixtures: Bash honours the CLAUDE.md carve-out too"
 assert_decision "appending to corpus-fixtures/CLAUDE.md is allowed" allow \

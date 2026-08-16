@@ -140,7 +140,10 @@ case "$tool_name" in
     verb_pattern='(^|[;&|`({[:space:]])(rm|mv|cp|ln|truncate|tee|dd|shred|rsync|install|sponge)([[:space:]]|$)'
     verb_pattern+='|(sed|perl)[[:space:]][^;&]*-i'
     verb_pattern+='|find[[:space:]][^;&]*-(delete|exec)'
-    verb_pattern+='|>'
+    # Only a redirect whose *target* is a protected path counts. A bare `>` also
+    # matches `2>/dev/null`, which is ordinary and appears in commands that
+    # merely mention a fixture directory.
+    verb_pattern+='|>[[:space:]]*[^;&>|]*corpus-(fixtures|changes)/'
     verb_pattern+='|git[[:space:]]+(checkout|restore|mv|rm)([[:space:]]|$)'
 
     segments="${command_line//&&/$'\n'}"
