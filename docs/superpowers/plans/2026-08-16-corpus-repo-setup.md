@@ -245,11 +245,12 @@ assert_decision "unrelated command is allowed" allow \
   "$(bash_payload "npm test")"
 
 echo "guard-fixtures: jq-missing fallback is scoped, not blanket"
+# Every external the guard calls, minus jq. printf/command/cd/pwd are builtins.
 EMPTY_BIN="$(mktemp -d)"
 trap 'rm -rf "$EMPTY_BIN"' EXIT
-for tool in cat grep sed printf; do
-  target="$(command -v "$tool" || true)"
-  [[ -n "$target" ]] && ln -sf "$target" "$EMPTY_BIN/$tool"
+for tool in cat grep dirname basename; do
+  target="$(command -v "$tool")"
+  ln -sf "$target" "$EMPTY_BIN/$tool"
 done
 assert_decision "without jq, protected path still denied" deny \
   "$(edit_payload "$REPO_ROOT/corpus-fixtures/vulnerable-server.js")" "$EMPTY_BIN"
@@ -473,10 +474,11 @@ assert_exit "non-shell file is ignored" 0 "$WORK_DIR/notes.md"
 assert_exit "missing file is ignored" 0 "$WORK_DIR/absent.sh"
 
 echo "lint-shell-on-edit: fails open"
+# Every external the lint hook calls before it gives up, minus shellcheck.
 EMPTY_BIN="$(mktemp -d)"
-for tool in cat jq printf; do
-  target="$(command -v "$tool" || true)"
-  [[ -n "$target" ]] && ln -sf "$target" "$EMPTY_BIN/$tool"
+for tool in cat jq dirname; do
+  target="$(command -v "$tool")"
+  ln -sf "$target" "$EMPTY_BIN/$tool"
 done
 assert_exit "without shellcheck, exits 0" 0 "$WORK_DIR/dirty.sh" "$EMPTY_BIN"
 rm -rf "$EMPTY_BIN"
